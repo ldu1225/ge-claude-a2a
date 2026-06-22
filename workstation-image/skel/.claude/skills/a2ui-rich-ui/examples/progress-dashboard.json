@@ -1,0 +1,27 @@
+[
+  {"beginRendering": {"surfaceId": "release-pipeline", "root": "root"}},
+  {"surfaceUpdate": {"surfaceId": "release-pipeline", "components": [
+    {"id": "root", "component": {"Card": {"child": "col"}}},
+    {"id": "col", "component": {"Column": {"alignment": "stretch", "children": {"explicitList": ["title", "subtitle", "div1", "step1", "step2", "step3", "step4", "div2", "footer"]}}}},
+    {"id": "title", "component": {"Text": {"usageHint": "h2", "text": {"literalString": "Release pipeline · v2.4.1"}}}},
+    {"id": "subtitle", "component": {"Text": {"usageHint": "caption", "text": {"path": "/eta"}}}},
+    {"id": "div1", "component": {"Divider": {}}},
+    {"id": "step1", "component": {"Row": {"alignment": "center", "children": {"explicitList": ["step1-icon", "step1-text"]}}}},
+    {"id": "step1-icon", "component": {"Icon": {"name": {"literalString": "check"}}}},
+    {"id": "step1-text", "component": {"Text": {"text": {"literalString": "Tests passed (218 tests, 12.4s)"}}}},
+    {"id": "step2", "component": {"Row": {"alignment": "center", "children": {"explicitList": ["step2-icon", "step2-text"]}}}},
+    {"id": "step2-icon", "component": {"Icon": {"name": {"literalString": "check"}}}},
+    {"id": "step2-text", "component": {"Text": {"text": {"literalString": "Image built and pushed (asia-northeast1, 412 MB)"}}}},
+    {"id": "step3", "component": {"Row": {"alignment": "center", "children": {"explicitList": ["step3-icon", "step3-text"]}}}},
+    {"id": "step3-icon", "component": {"Icon": {"name": {"literalString": "hourglassEmpty"}}}},
+    {"id": "step3-text", "component": {"Text": {"text": {"literalString": "Deploying to staging (Cloud Run rolling, 30%)"}}}},
+    {"id": "step4", "component": {"Row": {"alignment": "center", "children": {"explicitList": ["step4-icon", "step4-text"]}}}},
+    {"id": "step4-icon", "component": {"Icon": {"name": {"literalString": "radioButtonUnchecked"}}}},
+    {"id": "step4-text", "component": {"Text": {"text": {"literalString": "Smoke tests"}}}},
+    {"id": "div2", "component": {"Divider": {}}},
+    {"id": "footer", "component": {"Text": {"text": {"literalString": "_Logs: `gcloud run services logs read api-server --region=asia-northeast1`_"}}}}
+  ]}},
+  {"dataModelUpdate": {"surfaceId": "release-pipeline", "path": "/", "contents": [
+    {"key": "eta", "valueString": "Started 2 min ago · ETA ~3 min"}
+  ]}}
+]

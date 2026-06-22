@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  router-build:
+    name: a2a-router build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: a2a-router/package-lock.json
+      - working-directory: a2a-router
+        run: |
+          npm ci
+          npm run build
+
+  terraform-validate:
+    name: terraform fmt + validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+      - working-directory: terraform
+        run: |
+          terraform fmt -check -recursive
+          # -backend=false skips the gcs backend init (no creds needed in CI).
+          terraform init -backend=false
+          terraform validate
+
+  shellcheck:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y shellcheck
+      # `--severity=warning` skips info-level style hints (SC2012/2015/2094 etc).
+      - run: shellcheck --severity=warning workstation-image/*.sh a2a-router/deploy.sh

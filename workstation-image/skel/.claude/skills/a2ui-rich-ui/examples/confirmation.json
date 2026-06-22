@@ -1,0 +1,17 @@
+[
+  {"beginRendering": {"surfaceId": "drop-db-confirm", "root": "root"}},
+  {"surfaceUpdate": {"surfaceId": "drop-db-confirm", "components": [
+    {"id": "root", "component": {"Card": {"child": "col"}}},
+    {"id": "col", "component": {"Column": {"alignment": "stretch", "children": {"explicitList": ["title", "body", "div1", "detail", "div2", "button-row"]}}}},
+    {"id": "title", "component": {"Text": {"usageHint": "h2", "text": {"literalString": "Drop staging database?"}}}},
+    {"id": "body", "component": {"Text": {"text": {"literalString": "This will permanently remove the staging-products-db Cloud SQL instance. This action cannot be undone."}}}},
+    {"id": "div1", "component": {"Divider": {}}},
+    {"id": "detail", "component": {"Text": {"text": {"literalString": "**Instance:** `staging-products-db`\n**Region:** `asia-northeast1`\n**Created:** 2025-09-12\n**Size:** 47 GB"}}}},
+    {"id": "div2", "component": {"Divider": {}}},
+    {"id": "button-row", "component": {"Row": {"distribution": "end", "alignment": "center", "children": {"explicitList": ["cancel-btn", "confirm-btn"]}}}},
+    {"id": "cancel-btn", "component": {"Button": {"child": "cancel-label", "primary": false, "action": {"name": "cancel", "context": []}}}},
+    {"id": "cancel-label", "component": {"Text": {"text": {"literalString": "Cancel"}}}},
+    {"id": "confirm-btn", "component": {"Button": {"child": "confirm-label", "primary": true, "action": {"name": "confirm_drop_database", "context": [{"key": "instance", "value": {"literalString": "staging-products-db"}}]}}}},
+    {"id": "confirm-label", "component": {"Text": {"text": {"literalString": "Yes, drop it"}}}}
+  ]}}
+]

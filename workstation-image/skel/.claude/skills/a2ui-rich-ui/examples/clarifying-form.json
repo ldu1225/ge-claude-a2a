@@ -1,0 +1,23 @@
+[
+  {"beginRendering": {"surfaceId": "new-endpoint-form", "root": "root"}},
+  {"surfaceUpdate": {"surfaceId": "new-endpoint-form", "components": [
+    {"id": "root", "component": {"Card": {"child": "col"}}},
+    {"id": "col", "component": {"Column": {"alignment": "stretch", "children": {"explicitList": ["title", "subtitle", "name-field", "type-field", "desc-field", "auth-field", "date-field", "submit-btn"]}}}},
+    {"id": "title", "component": {"Text": {"usageHint": "h2", "text": {"literalString": "New API endpoint"}}}},
+    {"id": "subtitle", "component": {"Text": {"usageHint": "caption", "text": {"literalString": "Fill in the details so I can scaffold it correctly."}}}},
+    {"id": "name-field", "component": {"TextField": {"label": {"literalString": "Endpoint path"}, "text": {"path": "/path"}, "type": "text"}}},
+    {"id": "type-field", "component": {"TextField": {"label": {"literalString": "HTTP method (GET/POST/PUT/DELETE)"}, "text": {"path": "/method"}, "type": "text"}}},
+    {"id": "desc-field", "component": {"TextField": {"label": {"literalString": "Short description"}, "text": {"path": "/description"}, "type": "multiline"}}},
+    {"id": "auth-field", "component": {"CheckBox": {"label": {"literalString": "Requires authentication"}, "value": {"path": "/needsAuth"}}}},
+    {"id": "date-field", "component": {"DateTimeInput": {"label": {"literalString": "Target ship date"}, "value": {"path": "/shipDate"}, "enableDate": true, "enableTime": false}}},
+    {"id": "submit-btn", "component": {"Button": {"child": "submit-label", "primary": true, "action": {"name": "create_endpoint", "context": [{"key": "path", "value": {"path": "/path"}}, {"key": "method", "value": {"path": "/method"}}, {"key": "description", "value": {"path": "/description"}}, {"key": "needsAuth", "value": {"path": "/needsAuth"}}, {"key": "shipDate", "value": {"path": "/shipDate"}}]}}}},
+    {"id": "submit-label", "component": {"Text": {"text": {"literalString": "Create endpoint"}}}}
+  ]}},
+  {"dataModelUpdate": {"surfaceId": "new-endpoint-form", "path": "/", "contents": [
+    {"key": "path", "valueString": "/api/v1/"},
+    {"key": "method", "valueString": "POST"},
+    {"key": "description", "valueString": ""},
+    {"key": "needsAuth", "valueBoolean": true},
+    {"key": "shipDate", "valueString": ""}
+  ]}}
+]

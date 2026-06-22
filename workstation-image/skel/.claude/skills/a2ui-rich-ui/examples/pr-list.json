@@ -1,0 +1,39 @@
+[
+  {"beginRendering": {"surfaceId": "open-prs", "root": "root"}},
+  {"surfaceUpdate": {"surfaceId": "open-prs", "components": [
+    {"id": "root", "component": {"Card": {"child": "col"}}},
+    {"id": "col", "component": {"Column": {"alignment": "stretch", "children": {"explicitList": ["title", "subtitle", "divider", "pr-list"]}}}},
+    {"id": "title", "component": {"Text": {"usageHint": "h2", "text": {"literalString": "Open PRs awaiting review"}}}},
+    {"id": "subtitle", "component": {"Text": {"usageHint": "caption", "text": {"literalString": "3 PRs in acme/api, oldest 5 days"}}}},
+    {"id": "divider", "component": {"Divider": {}}},
+    {"id": "pr-list", "component": {"List": {"direction": "vertical", "children": {"template": {"dataBinding": "/prs", "componentId": "pr-row"}}}}},
+    {"id": "pr-row", "component": {"Card": {"child": "pr-row-col"}}},
+    {"id": "pr-row-col", "component": {"Column": {"children": {"explicitList": ["pr-title", "pr-meta", "pr-actions"]}}}},
+    {"id": "pr-title", "component": {"Text": {"usageHint": "h4", "text": {"path": "/title"}}}},
+    {"id": "pr-meta", "component": {"Text": {"usageHint": "caption", "text": {"path": "/meta"}}}},
+    {"id": "pr-actions", "component": {"Row": {"distribution": "end", "children": {"explicitList": ["pr-view-btn", "pr-approve-btn"]}}}},
+    {"id": "pr-view-btn", "component": {"Button": {"child": "pr-view-label", "primary": false, "action": {"name": "view_pr", "context": [{"key": "number", "value": {"path": "/number"}}]}}}},
+    {"id": "pr-view-label", "component": {"Text": {"text": {"literalString": "View"}}}},
+    {"id": "pr-approve-btn", "component": {"Button": {"child": "pr-approve-label", "primary": true, "action": {"name": "approve_pr", "context": [{"key": "number", "value": {"path": "/number"}}]}}}},
+    {"id": "pr-approve-label", "component": {"Text": {"text": {"literalString": "Approve"}}}}
+  ]}},
+  {"dataModelUpdate": {"surfaceId": "open-prs", "path": "/", "contents": [
+    {"key": "prs", "valueMap": [
+      {"key": "0", "valueMap": [
+        {"key": "number", "valueNumber": 142},
+        {"key": "title", "valueString": "feat: add inventory endpoint"},
+        {"key": "meta", "valueString": "#142 · Alice · 2 days ago · +127 -8"}
+      ]},
+      {"key": "1", "valueMap": [
+        {"key": "number", "valueNumber": 141},
+        {"key": "title", "valueString": "fix: nil-check in product loader"},
+        {"key": "meta", "valueString": "#141 · Bob · 4 days ago · +12 -3"}
+      ]},
+      {"key": "2", "valueMap": [
+        {"key": "number", "valueNumber": 138},
+        {"key": "title", "valueString": "docs: API reference for v3"},
+        {"key": "meta", "valueString": "#138 · Carol · 5 days ago · +540 -120"}
+      ]}
+    ]}
+  ]}}
+]

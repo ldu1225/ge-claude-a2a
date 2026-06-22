@@ -1,0 +1,23 @@
+[
+  {"beginRendering": {"surfaceId": "build-summary", "root": "root"}},
+  {"surfaceUpdate": {"surfaceId": "build-summary", "components": [
+    {"id": "root", "component": {"Card": {"child": "col"}}},
+    {"id": "col", "component": {"Column": {"alignment": "stretch", "children": {"explicitList": ["title", "subtitle", "div1", "stats-row", "div2", "files-title", "files-list"]}}}},
+    {"id": "title", "component": {"Text": {"usageHint": "h2", "text": {"literalString": "Build complete"}}}},
+    {"id": "subtitle", "component": {"Text": {"usageHint": "caption", "text": {"literalString": "feature/inventory-api · 12.4s"}}}},
+    {"id": "div1", "component": {"Divider": {}}},
+    {"id": "stats-row", "component": {"Row": {"distribution": "spaceBetween", "alignment": "center", "children": {"explicitList": ["stat-files", "stat-tests", "stat-lines"]}}}},
+    {"id": "stat-files", "component": {"Column": {"alignment": "center", "children": {"explicitList": ["stat-files-num", "stat-files-label"]}}}},
+    {"id": "stat-files-num", "component": {"Text": {"usageHint": "h3", "text": {"literalString": "3"}}}},
+    {"id": "stat-files-label", "component": {"Text": {"usageHint": "caption", "text": {"literalString": "files changed"}}}},
+    {"id": "stat-tests", "component": {"Column": {"alignment": "center", "children": {"explicitList": ["stat-tests-num", "stat-tests-label"]}}}},
+    {"id": "stat-tests-num", "component": {"Text": {"usageHint": "h3", "text": {"literalString": "5"}}}},
+    {"id": "stat-tests-label", "component": {"Text": {"usageHint": "caption", "text": {"literalString": "tests passing"}}}},
+    {"id": "stat-lines", "component": {"Column": {"alignment": "center", "children": {"explicitList": ["stat-lines-num", "stat-lines-label"]}}}},
+    {"id": "stat-lines-num", "component": {"Text": {"usageHint": "h3", "text": {"literalString": "+127 / -8"}}}},
+    {"id": "stat-lines-label", "component": {"Text": {"usageHint": "caption", "text": {"literalString": "lines"}}}},
+    {"id": "div2", "component": {"Divider": {}}},
+    {"id": "files-title", "component": {"Text": {"usageHint": "h5", "text": {"literalString": "Files"}}}},
+    {"id": "files-list", "component": {"Text": {"text": {"literalString": "- `app/api/inventory.py` (+82)\n- `app/models/product.py` (+15)\n- `tests/api/test_inventory.py` (+30)"}}}}
+  ]}}
+]

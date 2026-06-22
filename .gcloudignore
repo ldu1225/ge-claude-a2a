@@ -1,0 +1,25 @@
+# Files not needed for the workstation image build.
+.git/
+.gitignore
+.terraform/
+*.tfstate*
+*.tfplan
+*.log
+
+# Pre-built artifacts (rebuilt inside the image)
+**/node_modules/
+**/dist/
+**/build/
+
+# Editor / OS junk
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Docs and IaC don't go into the image
+docs/
+terraform/
+# a2a-router IS the server we run inside the workstation, so keep it.
+# (a2a-wrapper is the legacy in-workstation server, no longer used.)
+a2a-wrapper/
