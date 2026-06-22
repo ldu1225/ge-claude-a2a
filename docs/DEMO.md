@@ -1,12 +1,20 @@
-# Demo Script — Gemini Enterprise × Claude Code
+# 라이브 데모 가이드 (Demo Script)
 
-A live walkthrough of the per-user Cloud Workstation + Claude Agent SDK demo.
+본 문서는 제미나이 엔터프라이즈(Gemini Enterprise)와 클로드 코드(Claude Code) / 제미나이 CLI가 가상 머신(Cloud Workstation) 내부에서 연동되어 작동하는 A2A(Agent-to-Agent) 시나리오의 라이브 시연 가이드입니다.
 
-## Setup checklist (before customer call)
+---
 
-- [ ] Cloud Run revision: `gcloud run services describe a2a-router --region us-central1 --format='value(status.latestReadyRevisionName)'`
-- [ ] Workstation image up to date: `gcloud workstations configs describe a2a-agent-config --cluster ai-agents-cluster --region asia-northeast1 --format='value(container.image)'`
-- [ ] Smoke test:
+## 📌 시연 전 체크리스트 (고객 미팅 10분 전 필수 확인)
+
+- [ ] **Cloud Run 라우터 상태 확인:**
+  ```bash
+  gcloud run services describe a2a-router --region us-central1 --format='value(status.latestReadyRevisionName)'
+  ```
+- [ ] **가상 머신 최신 이미지 반영 여부 확인:**
+  ```bash
+  gcloud workstations configs describe a2a-agent-config --cluster ai-agents-cluster --region asia-northeast3 --format='value(container.image)'
+  ```
+- [ ] **자가 헬스체크 (Smoke Test) 실행:**
   ```bash
   TOKEN=$(gcloud auth print-access-token)
   curl -sS -X POST <YOUR_ROUTER_URL>/ \
@@ -15,119 +23,60 @@ A live walkthrough of the per-user Cloud Workstation + Claude Agent SDK demo.
     -d '{"jsonrpc":"2.0","method":"message/send","params":{"message":{"kind":"message","messageId":"smoke","role":"user","parts":[{"kind":"text","text":"Reply with OK"}]}},"id":1}' \
     | jq -r '.result.artifacts[-1].parts[-1].text // .result.status.message.parts[0].text'
   ```
-  Should print "OK". First call after a workstation idle-shutdown takes 90-300 s (cold start).
+  * **기대 결과:** `"OK"` 문자가 정상 출력되어야 합니다.
+  * *주의:* 가상 머신이 자동 꺼짐(Idle) 상태였다면 첫 기동 시 약 60~90초의 콜드 스타트 지연이 발생합니다. 미팅 전에 반드시 사전 기동을 해두시는 것을 권장합니다.
 
 ---
 
-## Recommended demo arc (≈ 15 min)
+## 🎬 추천 데모 시나리오 흐름 (약 15분 소요)
 
-### 1. Register the agent (1 min, can be pre-done)
-- GE Console → Agents → Add Agents → Custom agent via A2A
-- Paste the agent card JSON (URL: `<YOUR_ROUTER_URL>/.well-known/agent-card.json`)
-- Authorize agent → existing OAuth client (`<YOUR_OAUTH_CLIENT_ID>`)
+### 1단계: 에이전트 신규 등록 시연 (1분, 시간 관계상 사전 등록 권장)
+* 구글 워크스페이스 관리자 콘솔 → 에이전트 플랫폼 → A2A 에이전트 등록 클릭.
+* 배포된 라우터의 카드 주소 입력: `https://[YOUR_ROUTER_URL]/.well-known/agent-card.json`
+* 제미나이 관리자 화면이 에이전트 스펙을 자동 파싱하고 인가를 승인하는 깔끔한 과정을 고객에게 환기시킵니다.
 
-### 2. "Hello world" turn (proves it's alive)
-> "Reply with: WORKSTATION OK"
+### 2단계: 첫인상 "Hello World" 테스트 (동작 증명)
+* **💬 시연자 프롬프트:**
+  > *"가상 머신이 잘 켜져 있는지 확인하고 'WORKSTATION OK'라고 짧게 대답해 줘."*
+* **💡 설명 핵심 (시연 멘트):**
+  * "이 단 한 번의 대화 요청 뒤에서, 게이트웨이가 제 이메일을 안전하게 파싱하여 저만을 위해 준비된 영구 가상 머신을 깨우고 통신을 안전하게 포워딩합니다. 다른 동료가 요청하면 그 동료의 격리된 다른 가상 머신이 깨어납니다."
 
-Cold start: 60-90 s. Warm: 5-10 s. Talking points while waiting:
-- One Claude Code per GE end user — user identity comes from the OAuth bearer
-- Provisioning is idempotent: first turn creates the workstation, subsequent turns reuse it
-- 15 min idle → workstation shuts itself down (cost control)
+### 3단계: 세션 메모리 영속성 증명 (가장 중요)
+* **💬 시연자 프롬프트:**
+  > *"기억해 둬: 오늘 우리가 진행하는 프로젝트 코드명은 '바나나(BANANA)'야. 확인했다고만 대답해 줘."*
+  * (답변 확인 후 다음 질문 연속 투척)
+  > *"방금 내가 말한 프로젝트 코드명이 뭐였지?"*
+* **💡 설명 핵심 (시연 멘트):**
+  * "에이전트는 제가 웹 브라우저에서 대화하든 모바일 앱으로 묻든 상관없이, 대화의 고유 키를 가상 머신의 물리 영구 디스크 세션 스택(`~/.a2a-sessions/`)과 매핑하여 대화의 기억을 온전하게 보존합니다. 가상 머신이 내일 재부팅되어도 제 기억은 영원히 유지됩니다."
 
-### 3. Conversation memory (the killer feature)
-> "Remember: my project codename is BANANA. Just say acknowledged."
-> ... wait for response ...
-> "What is my project codename?"
+### 4단계: 고성능 다중 파일 코딩 시연 (실제 파일 생성)
+* **💬 시연자 프롬프트:**
+  > *"/home/user/workspace/shared/ 디렉토리 밑에 간결하고 세련된 매출 실적 관리 파이썬 웹 애플리케이션을 만들어줘. HTML, CSS, JS를 각각 독립된 파일로 분할해서 코딩해 주고 백그라운드 서버를 구동해 줘. 확인 창은 띄우지 마."*
+* **💡 설명 핵심 (시연 멘트):**
+  * 에이전트가 `app.py`, `style.css` 등을 하나씩 모듈화하여 독립된 파일로 쪼개어 정석대로 코딩해 나가는 live 진행 상황(`✍ Writing app.py` 등)을 고객이 지켜보게 합니다.
+  * 완성된 후 화면에 출력된 **`[🔗 🚀 웹 애플리케이션 실행하기]`** 하이퍼링크를 클릭하여, 새 브라우저 창에 아름답게 피어오른 라이브 웹앱 페이지를 청중에게 보여주며 큰 박수를 이끌어냅니다.
 
-→ Should reply "BANANA". Talking points:
-- contextId from GE → Claude SDK sessionId mapped on persistent disk
-- Survives workstation restarts; can be replayed manually via `claude --resume <id>`
-
-### 4. Multi-step coding work (workspace persistence)
-> "In /home/user/workspace/shared/ create a Python web app called 'tasktracker' with a single GET /health endpoint. Don't ask for confirmation."
-
-Watch the live status updates: `✍ Writing app.py`, `⚙ pip install flask`, etc.
-
-> "Run the app locally on port 3000 and curl /health"
-
-Note: only ports 80, 3000, and 1024+ are exposed by Cloud Workstations
-ingress. 8080 is reserved for the A2A server inside the workstation.
-
-### 5. SSH continuity (the magic moment)
-- Open the workstation in a browser (Cloud Workstations console → Launch)
-- In the Code OSS terminal:
+### 5단계: 대망의 개발자 세션 이관 (Resume - 시연의 하이라이트)
+* 대시보드 카드 하단의 **`[💻 Open in Web IDE]`** 하이퍼링크를 클릭해 브라우저 전용 VS Code 환경으로 새 탭 진입합니다.
+* VS Code 터미널 창을 열고 대담하게 아래 명령어를 칩니다:
   ```bash
-  a2a-sessions          # list every contextId -> sessionId mapping
-  a2a-resume            # interactive resume of the most recent session
+  a2a-resume
   ```
-- Continue the same conversation from the workstation terminal.
-- Switch back to GE → ask "what file did we just edit?" — Claude remembers.
+* **💡 설명 핵심 (시연 멘트):**
+  * "보십시오! 방금 제미나이 웹 대화창에서 '바나나' 코드명에 대해 이야기하고 웹앱을 빌드하던 모든 대화 역사와 AI 컨텍스트가, 명령어 한 줄로 개발자의 로컬 VS Code 환경 안으로 1초 만에 그대로 로드되었습니다! 이제 개발자는 기획자가 스마트폰으로 지시한 맥락을 단절 없이 이어받아 바로 하드코딩과 Git 배포를 진행할 수 있습니다."
 
-### 6. Multi-LLM (optional)
-> "@gemini explain this code"
-
-Routes to Gemini CLI (also via Vertex AI). Same workstation, same files.
-
-### 7. Customisation talking points
-- `/home/user/.claude/CLAUDE.md` — repo / project guidance Claude reads on every turn
-- `/home/user/.claude/settings.json` — set `"model": "claude-opus-4-7"` etc.
-- Both editable via Code OSS UI (we run the agent as `user`, not root)
+### 6단계: 구글 제미나이 CLI 연동 (선택 사항)
+* 터미널 또는 대화창에서 구글 자체의 코딩 엔진도 호출 가능함을 상기시킵니다.
+  > *"@gemini 방금 작성한 파이썬 웹 코드를 검토하고 성능 최적화 포인트를 리포트해 줘."*
+* **💡 설명 핵심 (시연 멘트):**
+  * "본 솔루션은 특정 에이전트 엔진에 종속되지 않습니다. 구글의 **Gemini CLI**와 앤트로픽의 **Claude Code**라는 세계 최고의 코딩 자원을 동일한 가상 머신 환경 내에서 자유롭게 넘나들며 최적의 협업 모델을 짤 수 있습니다."
 
 ---
 
-## Talking points (architecture deep-dive)
+## 🏛️ 기술 구조 핵심 요약 (C-Level 및 개발 파트너 설명용)
 
-- **Frontend**: Gemini Enterprise (GE) handles auth, RAG, prompt safety. We're just one custom agent.
-- **A2A**: GE speaks the open Agent2Agent protocol over JSON-RPC + SSE.
-  Spec: <https://a2a-protocol.org/v1.0.0/specification>
-- **Cloud Run router**: Stateless, pure A2A protocol shim. Identifies the user via OAuth, forwards to that user's workstation.
-- **Cloud Workstations**: One per user, persistent disk, runs the same router code in "local" mode (no forwarding). Claude Agent SDK + Gemini CLI bundled in the custom image.
-- **Vertex AI**: Both Claude (Anthropic) and Gemini are accessed via Vertex AI ADC — no API keys anywhere.
-- **Persistence story**:
-  - `~/.claude/projects/*.jsonl` — Claude SDK conversation transcripts (read by `--resume`)
-  - `~/.a2a-sessions/<contextId>.json` — A2A contextId → SDK sessionId pointer
-  - `~/workspace/shared/` — files Claude writes during the conversation
-  - All on the per-user persistent disk; survive idle shutdowns and image refreshes.
-
----
-
-## Common questions & answers
-
-**Q: Why the per-user workstation, not just per-user namespacing on Cloud Run?**
-A: Cloud Run is stateless and short-lived; conversation memory and generated files would die on instance recycle. Per-user PD gives true continuity and isolation — file Yuting writes never reaches Yuu, and vice versa.
-
-**Q: How does GE know which user is talking?**
-A: The customer registers an OAuth client on the agent. GE then forwards
-the user's OAuth bearer on every request. We exchange it at
-`/oauth2/v3/userinfo` for the user's email.
-
-**Q: Cost?**
-A: Workstation: ~$0.30/hour active, $0/hour stopped (e2-standard-4).
-Persistent disk: ~$5/month per user (50 GB). Idle shutdown after 15 min
-inactivity, max 2 h running → ~$90/month for 10 active users at 1 h/day.
-
-**Q: Can I run Opus 4.7 instead of Sonnet?**
-A: Yes. Edit `~/.claude/settings.json` in the workstation's Code OSS:
-`{"model": "claude-opus-4-7"}`. The SDK reads this on the next turn.
-
-**Q: What if the workstation is recycled mid-conversation?**
-A: First turn after recycle reads the persisted sessionId pointer from
-PD, replays the SDK transcript via `resume:<id>`, and Claude remembers.
-
----
-
-## Troubleshooting
-
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| `Provisioning your workstation…` then 503 | First-turn race; the inner Node server hadn't bound port 8080 yet | Already mitigated (we poll /health for 90 s before forwarding). If it still happens, send the same prompt again. |
-| `forward: workstation returned 404` | Router cached a deleted workstation's hostname | Already auto-recovers (one retry with fresh target). If persistent, restart the Cloud Run revision. |
-| Agent "doesn't remember" earlier message in same chat | contextId changed (GE side bug, rare) OR workstation was recycled and the persisted sessionId file was wiped | Check Cloud Run logs for `[session] recovered sessionId=` on the affected turn. |
-| `EACCES` editing files via Code OSS | Root-owned files from an old image | Rebuild + delete workstation; new image runs everything as `user`. |
-
-## Live URLs
-
-- Agent card: <<YOUR_ROUTER_URL>/.well-known/agent-card.json>
-- Cloud Run logs: <https://console.cloud.google.com/run/detail/us-central1/a2a-router/logs?project=YOUR_PROJECT_ID>
-- Workstations console: <https://console.cloud.google.com/workstations/list?project=YOUR_PROJECT_ID>
-- GitHub: <https://github.com/yuting0624/ge-claude-a2a>
+1. **프론트엔드 안전성:** 제미나이 엔터프라이즈는 사용자 인증 및 프롬프트 보안 필터링을 수행하며, 우리는 하나의 플러그인(Custom Agent) 스펙으로 정갈하게 결합됩니다.
+2. **A2A 표준 프로토콜:** JSON-RPC over HTTP 및 SSE(Server-Sent Events)를 지원하는 개방형 에이전트 통신 규격을 준수합니다.
+3. **무상태 게이트웨이 (Cloud Run):** 어떠한 사용자 데이터나 세션 정보도 프록시에 저장하지 않습니다. 들어오는 토큰만 검증하여 사용자의 물리적 사설 가상 머신으로 신호만 안전하게 연결해 줍니다.
+4. **격리된 영구 스페이스 (Cloud Workstations):** 사람마다 1:1로 할당된 컴퓨팅 자원으로 물리적 완벽한 멀티 테넌트 보안을 보장합니다. 에이전트가 쓴 임시 파일과 대화 기록은 모두 사용자 전용의 영구 디스크(PD)에 격리 보존됩니다.
+5. **API 보안 통합 (Vertex AI ADC):** 가상 머신 환경이 구글 AI 플랫폼 권한을 직접 가지므로, 소스코드 내에 어떠한 API 비밀키나 하드코딩된 패스워드도 보관할 필요가 없어 기업 보안 규정을 100% 만족합니다.

@@ -1,22 +1,26 @@
-# End-to-End Setup Guide
+# 엔드투엔드 배포 가이드 (End-to-End Setup Guide)
 
-This guide walks you through deploying the Gemini Enterprise x Claude Code A2A architecture in your own Google Cloud project.
+본 가이드는 구글 클라우드 플랫폼(GCP) 프로젝트에 **Gemini Enterprise × Claude Code A2A 연동 아키텍처**를 처음부터 끝까지 안전하게 배포하는 과정을 안내합니다.
 
-## Prerequisites
+---
 
-- A GCP project with billing enabled
-- `gcloud` CLI authenticated with project Owner/Editor permissions
-- Terraform >= 1.5
-- Node.js >= 20 (only needed if you want to run / develop the router locally)
+## 📌 사전 준비 사항
 
-Before starting, export your project ID:
+* 결제가 활성화된 **GCP 프로젝트**
+* 프로젝트 소유자(Owner) 또는 편집자(Editor) 권한이 인가된 **`gcloud` CLI** 환경
+* **Terraform** >= 1.5
+* **Node.js** >= 20 (라우터를 로컬에서 개발/디버깅하려는 경우에만 필요)
+
+배포를 시작하기 전에 터미널에 본인의 GCP 프로젝트 ID를 환경 변수로 설정합니다:
 ```bash
 export PROJECT_ID="YOUR_PROJECT_ID_HERE"
 gcloud config set project $PROJECT_ID
 ```
 
-## Step 1: Enable Required APIs
+---
 
+## 1단계: 필수 GCP API 활성화
+인프라 구축 및 AI 모델 호출에 필요한 핵심 구글 API들을 활성화합니다.
 ```bash
 gcloud services enable \
   workstations.googleapis.com \
@@ -26,79 +30,77 @@ gcloud services enable \
   cloudbuild.googleapis.com
 ```
 
-## Step 2: Provision Infrastructure (Terraform)
+---
 
-The Terraform configuration creates the Service Account, Artifact Registry, Cloud Workstations cluster, and the Cloud Run service.
+## 2단계: 클라우드 인프라 배포 (Terraform)
+테라폼 코드를 통해 서비스 계정, 이미지 레지스트리, 워크스테이션 클러스터 및 Cloud Run 라우터를 자동으로 생성합니다.
 
-First, create a GCS bucket for Terraform remote state (one-time, choose any unique name):
-
+### 1. 테라폼 원격 상태 저장용 GCS 버킷 생성 (최초 1회)
+테라폼의 상태 파일(`terraform.tfstate`)을 안전하게 보존하기 위해 구글 스토리지 버킷을 생성합니다. (버킷명은 고유해야 합니다)
 ```bash
 export TF_STATE_BUCKET="${PROJECT_ID}-terraform-state"
 gcloud storage buckets create "gs://${TF_STATE_BUCKET}" \
-  --project "$PROJECT_ID" --location asia-northeast1 --uniform-bucket-level-access
+  --project "$PROJECT_ID" --location asia-northeast3 --uniform-bucket-level-access
 ```
 
-Then initialize and apply Terraform:
-
+### 2. 테라폼 초기화 및 배포 실행
 ```bash
 cd terraform
 
-# Initialize the gcs backend with your state bucket
+# 생성한 GCS 버킷을 백엔드로 주입하여 테라폼 초기화
 terraform init -backend-config="bucket=${TF_STATE_BUCKET}"
 
-# Apply (project_id is required — no default)
+# 인프라 리소스 배포 적용
 terraform apply -var="project_id=${PROJECT_ID}"
 ```
 
-The defaults provision into the project's `default` VPC and create a new subnet for the workstation cluster. If you use a custom VPC, override:
+* **참고 (VPC 커스터마이징):** 테라폼은 기본적으로 프로젝트의 `default` VPC 네트워크에 가상 머신용 전용 사설 서브넷을 구축합니다. 만약 커스텀 VPC 네트워크를 사용하려는 경우 아래와 같이 변수를 재정의하여 배포합니다:
+  ```bash
+  terraform apply \
+    -var="project_id=${PROJECT_ID}" \
+    -var="network=my-custom-vpc" \
+    -var="subnetwork=my-ws-subnet"
+  ```
+* **결과값 확인:** 배포가 완료되면 화면에 출력되는 `artifact_registry_repo` 및 `cloud_run_url` 주소를 메모해 둡니다.
 
-```bash
-terraform apply \
-  -var="project_id=${PROJECT_ID}" \
-  -var="network=my-vpc" \
-  -var="subnetwork=my-ws-subnet"
-```
+---
 
-For repeatable runs, put your variables in `terraform/terraform.tfvars` (gitignored) instead of passing `-var` every time.
-
-**Note the outputs:** You will need the `artifact_registry_repo` and `cloud_run_url` later.
-
-## Step 3: Build and Push the Workstation Custom Image
-
-The custom image installs Node.js, Claude Code CLI, Gemini CLI, and the A2A routing server (which starts on boot). The build runs in Cloud Build, so you don't need a local Docker daemon.
+## 3단계: 워크스테이션 커스텀 컨테이너 이미지 빌드 (Cloud Build)
+에이전트 구동을 위해 Node.js, Claude Code, Gemini CLI, A2A 로컬 데몬이 내장된 프라이빗 도커 이미지를 빌드합니다. 빌드는 구글 클라우드의 **Cloud Build**를 사용하여 원격 실행되므로, 로컬 PC에 도커 엔진이 없어도 안전하게 빌드할 수 있습니다.
 
 ```bash
 cd ../workstation-image
 
-# Build and push the image to your Artifact Registry (uses Cloud Build).
+# Cloud Build를 이용한 이미지 컴파일 및 Artifact Registry 푸시 자동 실행
 PROJECT_ID=$PROJECT_ID ./build.sh
 ```
 
-When the build finishes, it prints the image URI. Re-apply Terraform to point the workstation config at this image:
-
+### 💡 이미지 테라폼 재반영
+빌드가 완료되면 터미널에 생성된 이미지 주소(URI)가 출력됩니다. 이 이미지를 테라폼에 주입하여 워크스테이션 설정을 최종 업데이트합니다.
 ```bash
 cd ../terraform
-WS_IMAGE="asia-northeast1-docker.pkg.dev/${PROJECT_ID}/a2a-agent-images/a2a-workstation:latest"
+WS_IMAGE="asia-northeast3-docker.pkg.dev/${PROJECT_ID}/a2a-agent-images/a2a-workstation:latest"
+
 terraform apply \
   -var="project_id=${PROJECT_ID}" \
   -var="workstation_image=${WS_IMAGE}"
 ```
 
-## Step 4: Build and Deploy the A2A Router (Cloud Run)
+---
 
-The router handles OAuth validation from Gemini Enterprise and forwards requests to the correct user's Cloud Workstation. Like the workstation image, it builds via Cloud Build.
-
+## 4단계: A2A 라우터 배포 (Cloud Run)
+제미나이 대화창에서 들어오는 인증 토큰을 검증하고 사용자 가상 머신으로 신호를 연결해 주는 프록시 라우터를 빌드 및 배포합니다.
 ```bash
 cd ../a2a-router
 
-# Build, deploy, and patch BASE_URL on the service.
+# 라우터 소스 빌드, 배포 및 퍼블릭 URL 패치 자동 실행
 PROJECT_ID=$PROJECT_ID ./deploy.sh
 ```
 
-## Step 5: Verify Deployment
+---
 
-Check that the router is serving the A2A agent card correctly:
-
+## 5단계: 배포 상태 정상 검증
+라우터가 제미나이 엔터프라이즈에 등록할 에이전트 스펙 카드(`agent-card.json`)를 정상적으로 반환하는지 검증합니다.
 ```bash
 ROUTER_URL=$(gcloud run services describe a2a-router \
   --project $PROJECT_ID \
@@ -107,19 +109,25 @@ ROUTER_URL=$(gcloud run services describe a2a-router \
 
 curl "${ROUTER_URL}/.well-known/agent-card.json" | jq .
 ```
+정상 작동 시 에이전트의 이름, 설명, 연동 스코프 정보가 JSON 형태로 출력됩니다.
 
-## Step 6: Register with Gemini Enterprise
+---
 
-1. Go to your Google Workspace Admin Console > **Gemini Enterprise** > **Agent Platform**
-2. Add a new Custom Agent using the Agent Card URL:
-   `https://[YOUR_ROUTER_URL]/.well-known/agent-card.json`
-3. GE will automatically discover the agent name, icon, and capabilities.
-4. **OAuth Configuration**: Ensure the OAuth client used by GE has access to request the `email` scope, as the router requires this to map requests to individual workstations.
+## 6단계: Gemini Enterprise에 커스텀 에이전트 등록
 
-## Troubleshooting
+1. **Google Workspace 관리자 콘솔** (`admin.google.com`)에 로그인합니다.
+2. **앱 (Apps)** > **Gemini Enterprise** > **에이전트 플랫폼 (Agent Platform)** 메뉴로 이동합니다.
+3. **[에이전트 추가]** 버튼을 누르고, 앞서 5단계에서 확인한 **에이전트 카드 URL**을 입력합니다:
+   `https://[YOUR_CLOUD_RUN_ROUTER_URL]/.well-known/agent-card.json`
+4. 제미나이가 자동으로 에이전트의 프로필, 아이콘 및 권한 범위를 해독하여 등록을 완료합니다.
+5. **OAuth 설정 확인:** 제미나이가 사용하는 OAuth 클라이언트가 유저의 `email` 범위(Scope)를 조회할 수 있도록 인가되었는지 확인하십시오. 라우터가 들어오는 요청을 사람별 가상 머신으로 매핑할 때 이메일 식별자가 반드시 필요합니다.
 
-- **Workstation doesn't start:** Check quota limits for `e2-standard-4` in your selected region.
-- **Claude returns Vertex AI errors:** Ensure your project has access to Anthropic models in Vertex AI Model Garden.
-- **Logs:** 
-  - Cloud Run Router: `gcloud run services logs read a2a-router`
-  - Workstation internal logs (SSH in via Console): the Cloud Workstations console "Logs" tab
+---
+
+## 🛠️ 장애 진단 및 모니터링 (Troubleshooting)
+
+* **워크스테이션 부팅이 되지 않는 경우:** 선택하신 리전(Region) 내에 `e2-standard-4` 장비의 리소스 쿼터(Quota) 제한이 걸려있지 않은지 GCP 콘솔에서 확인해 주세요.
+* **Claude가 Vertex AI 권한 오류를 뱉는 경우:** 사용하시는 GCP 프로젝트가 Vertex AI Model Garden 내의 **Anthropic Claude 모델** 사용 인가(Agreement)를 완료했는지 확인해 주세요.
+* **로그 확인 방법:**
+  * **라우터 게이트웨이 로그:** `gcloud run services logs read a2a-router`
+  * **가상 머신 내부 로그:** Cloud Workstations 웹 콘솔 내 **"로그(Logs)"** 탭 클릭 또는 터미널 접속 후 `/var/log/a2a-server.log` 확인.
