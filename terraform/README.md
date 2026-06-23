@@ -34,7 +34,29 @@
   * 어떠한 활동 여부와 관계없이 가상 머신이 켜진 지 2시간이 경과하면 무조건 일시 정지시켜, 밤샘 구동이나 무한 루프 버그로 인한 대규모 청구서 폭탄을 방지합니다.
 * **영구 영토 보존:** 가상 머신이 꺼지더라도 사용자의 영구 디스크(Persistent Disk, `/home/user`)는 온전하게 보존되므로 다시 켜는 즉시 작업 내용과 설정이 100% 복구됩니다.
 
+### 📦 E. 테라폼 생성 14대 GCP 리소스 명세 (GCP Resource Catalog)
+
+본 IaC 패키지가 배포될 때 구글 클라우드 프로젝트 내부에 **물리적으로 생성되는 14개의 핵심 리소스 블록**과 아키텍처적 명세는 다음과 같습니다:
+
+| 번호 | 테라폼 리소스 블록 (`Type.Name`) | GCP 실물 자원명 (Physical Resource) | 역할 및 도입 목적 (Architectural Purpose) |
+| :---: | :--- | :--- | :--- |
+| **1** | `google_service_account.a2a_agent` | A2A 전용 서비스 계정 (`a2a-agent`) | 에이전트 가상 머신 및 라우터가 키(Key) 없이 구글 API와 안전하게 인증하는 핵심 Identity 주체 |
+| **2** | `google_project_iam_member.vertex_ai_user` | IAM Platform User 권한 | 에이전트(Claude Code)가 구글 보안망 내부에서 Vertex AI Claude/Gemini API를 호출할 수 있는 권한 |
+| **3** | `google_project_iam_member.workstation_op_viewer` | IAM Workstation Operation Viewer 권한 | 가상 머신의 동작 상태를 안전하게 조회하기 위한 운영 관측 권한 |
+| **4** | `google_artifact_registry_repository.images` | Artifact Registry 저장소 (`a2a-agent-images`) | Claude 개발 환경이 튜닝된 커스텀 워크스테이션 도커 이미지 저장소 |
+| **5** | `google_compute_subnetwork.workstations` | VPC 사설 서브넷 (`a2a-ws-subnet`) | 가상 머신을 외부 공인 인터넷으로부터 차단하고 사설 망에 가두는 보안 서브넷 |
+| **6** | `google_compute_router.router` | Cloud Router (`a2a-ws-router`) | 사설 서브넷에 바인딩되어 아웃바운드 인터넷 통신 경로를 제공하는 사설 라우터 |
+| **7** | `google_compute_router_nat.nat` | Cloud NAT 게이트웨이 (`a2a-ws-nat`) | 사설 VM이 외부 패키지(npm 등)를 다운로드할 수 있게 하되, 외부 침입은 100% 차단하는 일방통행 게이트 |
+| **8** | `google_workstations_workstation_cluster.cluster` | Workstation Cluster (`ai-agents-cluster`) | 사용자별 가상 머신들이 기동되는 물리적 보안 클러스터 제어 구역 |
+| **9** | `google_workstations_workstation_config.config` | Workstation Config (`a2a-agent-config`) | 머신 사양(`e2-standard-4`), 10분 유휴 자동 종료, 볼륨 설정 등을 중앙 통제하는 정책 설정서 |
+| **10** | `google_cloud_run_v2_service.router` | Cloud Run 서비스 (`a2a-router`) | 사용자별 통신을 감지하여 꺼진 가상 머신을 깨우고 트래픽을 중계하는 중추 라우터 프록시 |
+| **11** | `google_cloud_run_v2_service_iam_member.public` | Cloud Run Invoker 권한 | 제미나이 에이전트 플랫폼이 라우터 API 엔드포인트를 호출할 수 있도록 인보커 권한 개방 |
+| **12** | `google_project_iam_member.artifactregistry_reader` | IAM Artifact Registry Reader 권한 | 가상 머신이 부팅될 때 Artifact Registry의 커스텀 보안 이미지를 정상적으로 읽어올 수 있도록 허용 |
+| **13** | `google_service_account_iam_member.agent_self_actor` | IAM Service Account User 권한 (ActAs) | 가상 머신 런타임이 에이전트 서비스 계정의 자격을 대행(Impersonation)할 수 있도록 허용하는 권한 |
+| **14** | `google_project_iam_member.workstation_admin` | IAM Workstations Admin 권한 | 라우터가 관리자 자격으로 가상 머신들을 자율적으로 켜고 끄며 토큰을 안전하게 발행할 수 있는 제어 권한 |
+
 ---
+
 
 ## 🛠️ 2. 입력 변수 명세 (Variables)
 
