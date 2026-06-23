@@ -234,53 +234,45 @@ curl "${ROUTER_URL}/.well-known/agent-card.json" | jq .
 
 ## 6단계: Gemini Enterprise에 커스텀 에이전트 등록 및 최종 검증
 
-라우터가 내보내는 에이전트 스펙 JSON 카드를 복사하여 구글 워크스페이스 관리자 콘솔에 정식 등록하고 작동 여부를 최종 검증합니다.
+구글 클라우드 공식 가이드라인([GCP 공식 문서](https://docs.cloud.google.com/gemini/enterprise/docs/register-and-manage-an-a2a-agent))에 따라, 구글 클라우드 콘솔의 Gemini Enterprise 제어창에서 에이전트를 등록하고 OAuth 보안 연동을 완료합니다.
 
-### 1. 에이전트 스펙 JSON 카드 확인 및 복사 (사전 검증)
-1. 웹 브라우저를 열고 **5단계에서 확인한 에이전트 카드 URL**로 접속합니다:
-   `https://[YOUR_CLOUD_RUN_ROUTER_URL]/.well-known/agent-card.json`
-2. **출력값 확인 (1차 검증):** 화면에 에이전트의 이름, 연동 API 규격, 매개변수 등이 담긴 **JSON 텍스트 블록**이 깨끗하게 출력되는지 확인합니다. (이 화면이 정상적으로 출력된다면 라우터와 SSL 인증서가 100% 정상 작동하는 것입니다!)
-3. 화면에 출력된 **JSON 데이터 전체를 드래그하여 복사(Copy)** 합니다.
+### 1. 🔒 GCP OAuth 클라이언트 ID 발급 (사전 준비)
+제미나이 플랫폼이 사용자를 대신해 구글 클라우드 자원에 접근하고 보안 인증(OAuth 2.0)을 수행할 수 있도록 자격 증명을 발급받습니다.
 
-### 2. 구글 워크스페이스 콘솔에 JSON 등록 & OAuth 보안 연동 (GCP ↔ Workspace 악수)
-
-제미나이 플랫폼과 내 구글 클라우드 간에 로그인 토큰을 안전하게 주고받을 수 있도록 **OAuth 인증 연동**을 완료합니다.
-
-#### **[GCP 단계 A] OAuth 동의 화면(Consent Screen) 최초 구성**
-1. **GCP 콘솔** > **API 및 서비스** > **[OAuth 동의 화면]** 메뉴로 이동합니다.
-2. User Type(사용자 유형)을 **[내부 (Internal)]**로 선택하고 생성을 클릭합니다. (회사 임직원 전용 격리 설정)
-3. 앱 이름(예: `Gemini A2A 에이전트`), 사용자 지원 이메일, 개발자 연락처 이메일을 입력하고 **[저장 후 계속]**을 누릅니다.
-4. **범위(Scopes) 설정:** **[범위 추가 또는 삭제]** 버튼을 누르고, 아래 두 가지 필수 범위를 체크하여 추가합니다:
-   * `.../auth/userinfo.email` (유저의 이메일 조회 권한 - 사용자 매핑에 필수)
-   * `openid` (구글 로그인 식별 정보 권한)
-5. 저장을 완료합니다.
-
-#### **[Workspace 단계 B] 에이전트 등록 및 리디렉션 URI 복사**
-1. **Google Workspace 관리자 콘솔** (`admin.google.com`)에 로그인합니다.
-2. **앱 (Apps)** > **Gemini** > **에이전트 플랫폼 (Agent Platform)** 메뉴로 이동합니다.
-3. **[에이전트 추가 (Add Agent)]** 버튼을 누르고, 앞서 1단계에서 복사해 둔 **JSON 로우 데이터**를 입력창에 붙여넣어 등록을 생성합니다.
-4. 생성된 에이전트의 **[인증 설정 (Authentication)]** 화면으로 이동하여, 화면에 표시된 **[승인된 리디렉션 URI (Authorized Redirect URI)]** 주소를 찾아 복사(Copy)합니다.
-   *(예: `https://extensions-oauth.googleusercontent.com/oauth2/callback` 등)*
-
-#### **[GCP 단계 C] OAuth 클라이언트 ID 발급 및 리디렉션 URI 등록**
-1. 다시 **GCP 콘솔** > **API 및 서비스** > **[사용자 인증 정보]** 메뉴로 이동합니다.
+1. **GCP 콘솔** > **API 및 서비스** > **[사용자 인증 정보]** 메뉴로 이동합니다.
 2. 상단의 **[+ 사용자 인증 정보 만들기]** ➔ **[OAuth 클라이언트 ID]**를 선택합니다.
 3. 애플리케이션 유형을 **[웹 애플리케이션 (Web Application)]**으로 선택합니다.
-4. 이름을 입력합니다 (예: `A2A-Router-OAuth-Client`).
-5. **[승인된 리디렉션 URI (Authorized Redirect URIs)]** 섹션으로 내려가 **[+ URI 추가]**를 누르고, 위 **[Workspace 단계 B]**에서 복사해 온 **리디렉션 URI 주소**를 정확히 붙여넣습니다. (단 1글자의 오타도 없어야 합니다!)
-6. **[만들기]**를 누르면 팝업창에 생성된 **클라이언트 ID (Client ID)**와 **클라이언트 보안 비밀번호 (Client Secret)**가 출력됩니다. 이 두 값을 각각 메모장에 안전하게 복사해 둡니다.
+4. 이름(예: `Gemini-A2A-Router-Client`)을 입력합니다.
+5. **[승인된 리디렉션 URI (Authorized Redirect URIs)]** 섹션으로 이동하여 **[+ URI 추가]**를 누르고, 구글 공식 A2A 연동 리디렉션 주소 2개를 정확히 입력합니다:
+   * `https://vertexaisearch.cloud.google.com/oauth-redirect`
+   * `https://vertexaisearch.cloud.google.com/static/oauth/oauth.html`
+6. **[만들기]**를 누르고, 생성 팝업창에서 **[JSON 다운로드]** 버튼을 눌러 자격 증명 파일(`client_secret_xxxx.json`)을 컴퓨터에 다운로드합니다.
+   *(이 파일 안에 `Client ID`, `Client secret`, `Authorization URI`, `Token URI`가 모두 들어있습니다.)*
 
-#### **[Workspace 단계 D] OAuth 키 주입 및 최종 완결**
-1. 다시 **Workspace 관리자 콘솔**의 에이전트 인증 설정 화면으로 돌아옵니다.
-2. 방금 복사해 둔 **클라이언트 ID**와 **클라이언트 보안 비밀번호**를 각각의 입력창에 정확히 붙여넣습니다.
-3. **OAuth 범위(Scope) 확인:** 제미나이 확장 기능이 사용자의 `email` 정보를 가져올 수 있도록 설정되었는지 최종 확인하고 저장합니다. (이메일 정보가 넘어와야 라우터가 사람별 가상 머신으로 매핑할 수 있습니다!)
-4. 이로써 구글 사설 보안망 간의 양방향 OAuth 연동이 완벽히 끝납니다.
+### 2. 📄 에이전트 스펙 JSON 카드 확인 및 복사
+1. 웹 브라우저를 열고 **5단계에서 확인한 에이전트 카드 URL**로 접속합니다:
+   `https://[YOUR_CLOUD_RUN_ROUTER_URL]/.well-known/agent-card.json`
+2. **출력값 확인 (1차 검증):** 화면에 에이전트의 스펙 정보(프로토콜 버전 `0.3`, 이름, 주소, skills 등)가 담긴 **JSON 텍스트 블록**이 깨끗하게 출력되는지 확인합니다.
+3. 화면에 출력된 **JSON 데이터 전체를 드래그하여 복사(Copy)** 합니다.
 
+### 3. 🖥️ 구글 클라우드 콘솔에서 에이전트 등록
+1. **GCP 콘솔** > **[Gemini Enterprise]** (`console.cloud.google.com/gemini-enterprise/`) 페이지로 이동합니다.
+2. 에이전트를 등록할 **Gemini Enterprise 앱(App)**의 이름을 클릭합니다.
+3. 왼쪽 메뉴에서 **[에이전트 (Agents)]** ➔ **[+ 에이전트 추가 (Add Agents)]**를 클릭합니다.
+4. 에이전트 유형 선택 화면에서 **[A2A를 통한 커스텀 에이전트 (Custom agent via A2A)]**의 **[추가 (Add)]** 버튼을 누릅니다.
+5. **[에이전트 카드 JSON (Agent card JSON)]** 입력창에 위 **2단계에서 복사해 둔 JSON 텍스트 전체**를 그대로 붙여넣습니다.
+6. **[에이전트 세부정보 미리보기 (Preview agent details)]** ➔ **[다음 (Next)]**을 누릅니다.
+7. **OAuth 보안 인증 정보 입력 (GCP ↔ Gemini 연동):**
+   * **Client ID & Client secret:** 위 1단계에서 다운로드한 JSON 파일에 적힌 값을 복사해 입력합니다.
+   * **Authorization URI & Token URI:** 다운로드한 JSON 파일 내부의 URI 주소값을 각각 대조하여 입력합니다.
+   * **Scopes:** 에이전트 매핑과 권한 검증에 필요한 기본 범위(예: `email`, `openid` 등)를 입력합니다.
+8. **[완료 (Finish)]** 버튼을 누르면 정식 등록이 완료됩니다.
 
-### 3. 최종 연동 확인 (제미나이 UI 검증)
-1. 일반 유저 계정으로 **Gemini Enterprise 채팅 창** (`gemini.google.com`)에 접속합니다.
-2. 채팅창 왼쪽 메뉴의 **확장 기능(Extensions)** 또는 에이전트 갤러리에 방금 등록한 커스텀 에이전트가 정상적으로 활성화되어 표시되는지 확인합니다.
-3. 대화창에 `@에이전트_이름`을 호출하거나 질문을 던져, 에이전트가 동작하며 화면에 리치 A2UI 카드를 성공적으로 그려내는지 테스트합니다.
+### 4. 🎯 제미나이 UI에서 최종 작동성 검증
+1. 정식 구글 워크스페이스 사용자 계정으로 **Gemini Enterprise 채팅 화면** (`gemini.google.com`)에 접속합니다.
+2. 채팅창 메뉴의 **확장 기능(Extensions)** 목록 또는 에이전트 갤러리에 방금 등록한 에이전트(예: `Hello World Agent`)가 정상적으로 노출되고 활성화되어 있는지 확인합니다.
+3. 대화창에 `@에이전트_이름`을 호출하거나 관련 질문을 던져, 에이전트가 가상 머신(Workstation)과 통신하여 성공적으로 리치 A2UI 카드를 렌더링하고 작업을 수행하는지 최종 확인합니다!
+
 
 
 ---
