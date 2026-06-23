@@ -23,19 +23,37 @@ gcloud config set project $PROJECT_ID
 
 대기업(LG 계열사 포함) 및 금융권의 엄격한 폐쇄망/보안 GCP 환경에 배포하는 경우, 인프라 충돌을 방지하기 위해 **배포 전에 다음 5가지 사항을 반드시 확인하고 조치**해야 합니다.
 
-### 1. 🌐 default VPC 네트워크 존재 여부 확인 (가장 빈번한 에러!)
-* **상황:** 대기업 보안 프로젝트는 생성과 동시에 기본 `default` VPC 네트워크를 강제 삭제하는 경우가 많습니다. 이 상태에서 기본값으로 배포하면 서브넷 생성 시 `404 Not Found` 에러가 발생합니다.
-* **조치:** 고객사 네트워크 팀에 **사용 중인 실제 사설 VPC 이름**을 확인하고, `terraform.tfvars` 파일에 아래와 같이 기재하여 오버라이드하십시오:
-  ```hcl
-  network = "고객사의_사설_VPC_네트워크_이름"
-  ```
+### 1. 🌐 내 프로젝트의 VPC 네트워크 이름 알아내기
+* **상황:** 대기업 보안 프로젝트는 기본 `default` VPC 네트워크를 강제 삭제하는 경우가 많아, 테라폼이 404 에러로 뻗을 수 있습니다. 따라서 **내가 사용할 실제 VPC 네트워크 이름을 먼저 알아내야 합니다.**
+* **알아내는 방법 (택 1):**
+  * **방법 A (콘솔 화면):** 구글 클라우드 콘솔 접속 ➔ **[VPC 네트워크]** ➔ **[VPC 네트워크]** 메뉴로 이동하여 목록에 있는 **네트워크 이름**을 복사합니다.
+  * **방법 B (터미널 명령어):** 아래 명령어를 복사하여 터미널에 실행하면 즉시 이름 목록이 출력됩니다:
+    ```bash
+    gcloud compute networks list --project=$PROJECT_ID
+    ```
+    *(출력된 목록의 `NAME` 열에 적힌 이름을 메모해 둡니다. 예: `default` 또는 `my-custom-vpc` 등)*
 
-### 2. 🔌 사설 IP 대역 (CIDR) 중복 여부 확인
-* **상황:** 본 아키텍처는 가상 머신 격리를 위해 기본적으로 `10.20.0.0/24` 사설 IP 대역을 신규 개척하여 사용합니다. 만약 이 대역을 기존 사내망(ERP, DB 등)이 이미 점유하고 있다면 **IP 충돌 에러**가 발생합니다.
-* **조치:** 네트워크 팀에 **"현재 사용하지 않는 빈 사설 IP 대역(/24 범위)"**을 할당받아 `terraform.tfvars` 파일에 주입하십시오:
-  ```hcl
-  subnetwork_cidr = "192.168.50.0/24" # 할당받은 빈 대역 기입
-  ```
+### 🔌 2. 설정 파일(`terraform.tfvars`) 생성 및 값 세팅하기
+* **상황:** 알아낸 VPC 이름과 주소 대역을 테라폼에 안전하게 전달해야 합니다. 복잡한 명령어를 칠 필요 없이, **`terraform` 폴더 안에 설정 파일(`terraform.tfvars`)을 만들어 두면 테라폼이 자동으로 읽어갑니다.**
+* **초초보자용 생성 방법 (터미널 복사-붙여넣기):**
+  1. 먼저 터미널에서 **`terraform` 폴더로 이동**합니다:
+     ```bash
+     cd terraform
+     ```
+  2. 아래 박스 안의 명령어 **전체를 복사해서 터미널에 그대로 붙여넣기(Paste)하고 Enter**를 누릅니다. (단, `YOUR_PROJECT_ID`와 `YOUR_VPC_NAME` 부분은 본인의 실제 값으로 수정하여 붙여넣으세요!)
+     ```bash
+     cat << 'EOF' > terraform.tfvars
+     project_id      = "YOUR_PROJECT_ID"    # 예: "duleetest" (본인의 구글 프로젝트 ID)
+     network         = "YOUR_VPC_NAME"      # 예: "default" (위 1단계에서 확인한 VPC 네트워크 이름)
+     subnetwork_cidr = "10.20.0.0/24"       # 기본 사설 대역. 만약 사내망(ERP, DB 등)과 충돌 시 "192.168.50.0/24" 등으로 변경
+     EOF
+     ```
+  3. 파일이 에러 없이 예쁘게 잘 만들어졌는지 아래 명령어로 확인해 봅니다:
+     ```bash
+     cat terraform.tfvars
+     ```
+     *(방금 입력한 세 줄이 터미널에 그대로 출력되면 성공입니다!)*
+
 
 ### 🧠 3. Vertex AI 내 Anthropic 모델 이용 동의 (Model Garden Agreement)
 * **상황:** 에이전트(Claude Code)가 정상적으로 Vertex AI API를 호출하기 위해서는 해당 GCP 프로젝트가 Vertex AI 내의 **Claude 모델 이용 약관에 미리 동의**되어 있어야 합니다. 동의가 누락되면 에이전트 가동 시 `403 Permission Denied` 또는 모델 없음 에러가 발생합니다.
@@ -97,19 +115,11 @@ cd terraform
 terraform init -backend-config="bucket=${TF_STATE_BUCKET}"
 
 # 인프라 리소스 배포 적용
-terraform apply -var="project_id=${PROJECT_ID}"
+# (사전 체크리스트 단계에서 이미 terraform.tfvars 파일을 생성했으므로, 
+#  추가 변수 입력 없이 아래 한 줄만 치면 자동으로 모든 값이 읽혀 배포됩니다!)
+terraform apply
 ```
 
-* **참고 (VPC 커스터마이징 및 default VPC 삭제 대응):** 
-  본 아키텍처는 기본적으로 프로젝트의 `default` VPC 네트워크를 사용합니다. 
-  > ⚠️ **중요 (보안 강화 환경):** 대기업이나 금융권 등 보안이 철저한 GCP 프로젝트에서는 기본 `default` 네트워크가 삭제되어 있는 경우가 많습니다. 이 경우 변수를 재정의하지 않으면 서브넷 생성 시 `404 Not Found` 에러가 발생합니다. 본인들이 사용하는 **실제 사설 VPC 네트워크명**을 아래와 같이 반드시 변수로 재정의하여 배포하십시오:
-  ```bash
-  terraform apply \
-    -var="project_id=${PROJECT_ID}" \
-    -var="network=사용자_VPC_네트워크_이름" \
-    -var="subnetwork=a2a-ws-subnet"
-  ```
-  *(프로덕션 환경에서는 명령어마다 변수를 치는 대신 `terraform.tfvars` 파일을 생성하여 `project_id` 및 `network` 변수를 영구적으로 기재하여 사용하는 것을 권장합니다.)*
 * **결과값 확인:** 배포가 완료되면 화면에 출력되는 `artifact_registry_repo` 및 `cloud_run_url` 주소를 메모해 둡니다.
 
 ---
