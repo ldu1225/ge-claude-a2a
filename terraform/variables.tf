@@ -80,3 +80,10 @@ variable "agent_forward_mode" {
   type        = string
   default     = "workstation"
 }
+
+variable "create_nat" {
+  description = "Whether to create a new Cloud Router and Cloud NAT. Set to false if your VPC already has internet egress configured."
+  type        = bool
+  default     = true
+}
+

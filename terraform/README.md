@@ -70,7 +70,9 @@
 | `vertex_ai_region` | `us-east5` | No | Claude Code 모델 API가 구동될 Vertex AI 서빙 리전. |
 | `network` | `default` | No | 워크스테이션 클러스터가 연결될 물리 VPC 네트워크명. |
 | `subnetwork` | `a2a-ws-subnet` | No | 신규 생성될 전용 사설 서브넷 이름. |
+| `create_nat` | `true` | No | Cloud Router 및 Cloud NAT 신규 생성 여부 (이미 VPC에 인터넷 아웃바운드 게이트웨이가 구성되어 있다면 `false`로 설정). |
 | `subnetwork_cidr` | `10.20.0.0/24` | No | 신규 생성될 사설 서브넷의 IP 대역 범위. |
+
 | `workstation_machine_type` | `e2-standard-4` | No | 가상 머신의 CPU/Memory 하드웨어 규격. |
 | `workstation_idle_timeout_seconds` | `600` | No | 유휴 상태 돌입 시 자동 종료 대기 시간 (초 단위). |
 
