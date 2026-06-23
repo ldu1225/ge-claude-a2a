@@ -4,22 +4,60 @@
 
 ---
 
-## 📌 사전 준비 사항
+## 📌 사전 준비 사항 & 원클릭 설치 가이드
 
-* 결제가 활성화된 **GCP 프로젝트**
-* 프로젝트 소유자(Owner) 또는 편집자(Editor) 권한이 인가된 **`gcloud` CLI** 환경
-* **Terraform** >= 1.5
-* **Node.js** >= 20 (라우터를 로컬에서 개발/디버깅하려는 경우에만 필요)
+본 패키지를 배포하기 위해 컴퓨터에 배포 도구들이 설치되어 있어야 합니다. **컴퓨터에 아무것도 없는 백지상태(Mac OS 권장)** 기준, 터미널을 열고 아래 순서대로 명령어를 복사해서 실행하면 모든 준비가 끝납니다.
+
+### 1. 🛠️ 필수 개발 도구 설치하기 (Mac OS 기준)
+터미널을 열고 아래 명령어들을 순서대로 붙여넣으세요:
+* **패키지 매니저(Homebrew) 설치 (설치되어 있지 않은 경우에만 실행):**
+  ```bash
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  ```
+* **gcloud CLI (구글 클라우드 제어 도구) 설치:**
+  ```bash
+  brew install --cask google-cloud-sdk
+  ```
+* **Terraform (테라폼) 설치:**
+  ```bash
+  brew tap hashicorp/tap
+  brew install hashicorp/tap/terraform
+  ```
+* **Node.js 및 jq 설치:**
+  ```bash
+  brew install node jq
+  ```
+*(Windows 사용자의 경우 [구글 SDK 공식 다운로드](https://cloud.google.com/sdk/docs/install) 및 [테라폼 공식 다운로드](https://developer.hashicorp.com/terraform/install) 페이지를 통해 일반 프로그램처럼 다운받아 설치하시면 됩니다.)*
+
+### 🔒 2. 구글 클라우드 로그인 및 권한 연동 (필수!)
+도구 설치가 끝났다면, 내 컴퓨터가 구글 클라우드 프로젝트를 제어할 수 있도록 **자격 증명(로그인)**을 해야 합니다. 터미널에 아래 두 명령어를 차례대로 실행하세요:
+
+1. **gcloud CLI 사용자 로그인 (웹 브라우저가 열리면 본인의 구글 계정으로 로그인):**
+   ```bash
+   gcloud auth login
+   ```
+2. **테라폼 전용 구글 인증(ADC) 로그인 (중요! 테라폼이 구글 API를 찌르기 위해 필수적임):**
+   ```bash
+   gcloud auth application-default login
+   ```
+   *(브라우저에서 로그인 승인 버튼을 누르면 자격 증명서가 로컬에 안전하게 저장됩니다.)*
+
+### 💳 3. 결제(Billing)가 활성화된 GCP 프로젝트 준비
+* 구글 클라우드는 가상 머신을 켜기 위해 결제 계정이 연결되어 있어야 합니다.
+* **[GCP 콘솔 결제 화면]**으로 이동하여 본인의 프로젝트에 신용카드 등 결제 수단이 정상적으로 등록 및 연결되어 있는지 확인해 주십시오.
+
+---
 
 배포를 시작하기 전에 터미널에 본인의 GCP 프로젝트 ID를 환경 변수로 설정합니다:
 ```bash
-export PROJECT_ID="YOUR_PROJECT_ID_HERE"
+export PROJECT_ID="YOUR_PROJECT_ID_HERE" # 예: "duleetest"
 gcloud config set project $PROJECT_ID
 ```
 
 ---
 
 ## ⚠️ 대기업 및 보안망 배포 전 필수 체크리스트 & 충돌 방지 가이드
+
 
 대기업(LG 계열사 포함) 및 금융권의 엄격한 폐쇄망/보안 GCP 환경에 배포하는 경우, 인프라 충돌을 방지하기 위해 **배포 전에 다음 5가지 사항을 반드시 확인하고 조치**해야 합니다.
 
@@ -81,9 +119,17 @@ gcloud config set project $PROJECT_ID
 
 ---
 
+### 🎉 다음 여정 안내: 사전 설정 및 체크리스트를 완료했다면
 
+여기까지 모든 사전 체크와 `terraform.tfvars` 설정 파일 작성을 완료하셨나요? 축하드립니다! 가장 까다로운 대기업 보안망 통과 준비가 완벽히 끝났습니다.
+
+이제 본격적으로 **구글 클라우드에 실제 인프라를 배포하고 연동하는 단계**로 진입합니다.
+아래의 **[1단계: 필수 GCP API 활성화]**부터 차례대로 터미널에 명령어를 복사하여 순차적으로 실행해 주시면 됩니다! 🚀
+
+---
 
 ## 1단계: 필수 GCP API 활성화
+
 인프라 구축 및 AI 모델 호출에 필요한 핵심 구글 API들을 활성화합니다.
 ```bash
 gcloud services enable \
