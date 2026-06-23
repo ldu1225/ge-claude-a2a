@@ -50,7 +50,7 @@
 
 배포를 시작하기 전에 터미널에 본인의 GCP 프로젝트 ID를 환경 변수로 설정합니다:
 ```bash
-export PROJECT_ID="YOUR_PROJECT_ID_HERE" # 예: "duleetest"
+export PROJECT_ID="YOUR_PROJECT_ID_HERE" # 예: "my-gcp-project-123"
 gcloud config set project $PROJECT_ID
 ```
 
@@ -81,7 +81,7 @@ gcloud config set project $PROJECT_ID
   2. 아래 박스 안의 명령어 **전체를 복사해서 터미널에 그대로 붙여넣기(Paste)하고 Enter**를 누릅니다. (단, `YOUR_PROJECT_ID`와 `YOUR_VPC_NAME` 부분은 본인의 실제 값으로 수정하여 붙여넣으세요!)
      ```bash
      cat << 'EOF' > terraform.tfvars
-     project_id      = "YOUR_PROJECT_ID"    # 예: "duleetest" (본인의 구글 프로젝트 ID)
+     project_id      = "YOUR_PROJECT_ID"    # 예: "my-gcp-project-123" (본인의 구글 프로젝트 ID)
      network         = "YOUR_VPC_NAME"      # 예: "default" (위 1단계에서 확인한 VPC 네트워크 이름)
      subnetwork_cidr = "10.20.0.0/24"       # 기본 사설 대역. 만약 사내망(ERP, DB 등)과 충돌 시 "192.168.50.0/24" 등으로 변경
      EOF
