@@ -72,13 +72,22 @@ terraform init -backend-config="bucket=your-project-id-terraform-state"
 terraform plan -var="project_id=your-project-id" -out=tfplan.binary
 ```
 
+> **💡 꿀팁: default VPC 네트워크가 삭제된 보안/폐쇄망 환경 배포법**
+> 대기업이나 금융권 등 보안이 철저한 GCP 프로젝트에서는 기본 `default` 네트워크가 아예 지워져 있는 경우가 많습니다. 이 경우 테라폼 실행 시 아래와 같이 본인들이 사용하는 **실제 VPC 네트워크 이름을 변수로 추가 주입**해 주면 아무런 에러 없이 100% 완벽히 생성됩니다:
+> ```bash
+> # CLI 명령어로 직접 주입하는 방법
+> terraform plan -var="project_id=your-project-id" -var="network=고객사의_VPC_이름" -out=tfplan.binary
+> 
+> # 또는 terraform.tfvars 파일을 생성하여 영구 기입해두는 것을 권장합니다 (추천)
+> ```
+
 ### 3단계: 실제 배포 적용 (Apply)
 시뮬레이션 완료 후, 준비된 플랜 바이너리를 주입하여 클라우드 자원을 배포합니다. (소요 시간 약 5분 ~ 7분)
 ```bash
 terraform apply tfplan.binary
 ```
 
-### 4단계: 배포 결과 확인 및 출력값 활용
+### 4단계: 배포 결과 확인 및 에이전트 등록
 배포가 완수되면 콘솔 화면에 에이전트 등록에 필요한 핵심 정보들이 자동으로 출력됩니다:
 ```bash
 # 배포 성공 시 출력 예시:
@@ -86,4 +95,7 @@ service_account_email = "a2a-agent@your-project-id.iam.gserviceaccount.com"
 cloud_run_url         = "https://a2a-router-2zrbh4cqea-uc.a.run.app"
 agent_card_url        = "https://a2a-router-2zrbh4cqea-uc.a.run.app/.well-known/agent-card.json"
 ```
-출력된 `agent_card_url`을 제미나이 엔터프라이즈 에이전트 갤러리에 그대로 복사하여 등록하면 모든 세팅이 완료됩니다!
+제미나이 엔터프라이즈 관리자 콘솔 등록을 완료하려면:
+1. 웹 브라우저에서 출력된 `agent_card_url` 주소로 접속해 **출력된 JSON 텍스트 내용 전체를 복사**합니다.
+2. **구글 워크스페이스 관리자 콘솔** > **앱** > **Gemini** > **에이전트 플랫폼**으로 이동하여 새 에이전트 추가 버튼을 누르고, 복사한 **JSON 텍스트를 입력창에 직접 붙여넣기(Paste)** 하거나 업로드하여 등록을 완료합니다.
+

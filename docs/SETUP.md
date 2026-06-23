@@ -54,13 +54,16 @@ terraform init -backend-config="bucket=${TF_STATE_BUCKET}"
 terraform apply -var="project_id=${PROJECT_ID}"
 ```
 
-* **참고 (VPC 커스터마이징):** 테라폼은 기본적으로 프로젝트의 `default` VPC 네트워크에 가상 머신용 전용 사설 서브넷을 구축합니다. 만약 커스텀 VPC 네트워크를 사용하려는 경우 아래와 같이 변수를 재정의하여 배포합니다:
+* **참고 (VPC 커스터마이징 및 default VPC 삭제 대응):** 
+  본 아키텍처는 기본적으로 프로젝트의 `default` VPC 네트워크를 사용합니다. 
+  > ⚠️ **중요 (보안 강화 환경):** 대기업이나 금융권 등 보안이 철저한 GCP 프로젝트에서는 기본 `default` 네트워크가 삭제되어 있는 경우가 많습니다. 이 경우 변수를 재정의하지 않으면 서브넷 생성 시 `404 Not Found` 에러가 발생합니다. 본인들이 사용하는 **실제 사설 VPC 네트워크명**을 아래와 같이 반드시 변수로 재정의하여 배포하십시오:
   ```bash
   terraform apply \
     -var="project_id=${PROJECT_ID}" \
-    -var="network=my-custom-vpc" \
-    -var="subnetwork=my-ws-subnet"
+    -var="network=사용자_VPC_네트워크_이름" \
+    -var="subnetwork=a2a-ws-subnet"
   ```
+  *(프로덕션 환경에서는 명령어마다 변수를 치는 대신 `terraform.tfvars` 파일을 생성하여 `project_id` 및 `network` 변수를 영구적으로 기재하여 사용하는 것을 권장합니다.)*
 * **결과값 확인:** 배포가 완료되면 화면에 출력되는 `artifact_registry_repo` 및 `cloud_run_url` 주소를 메모해 둡니다.
 
 ---
