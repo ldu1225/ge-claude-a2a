@@ -154,11 +154,20 @@ gcloud storage buckets create "gs://${TF_STATE_BUCKET}" \
 ```
 
 ### 2. 테라폼 초기화 및 배포 실행
+
+> ⚠️ **배포 전 필수 자격증명 점검:** 
+> 테라폼이 내 컴퓨터(로컬)에서 구글 클라우드와 통신하고, 생성한 GCS 금고(백엔드)에 일기장을 안전하게 쓰기 위해서는 **테라폼 전용 구글 인증(ADC)**이 반드시 활성화되어 있어야 합니다.
+> 혹시 사전 준비 단계에서 로그인을 건너뛰셨거나 권한 에러가 발생한다면, **지금 터미널에 아래 명령어를 실행하여 웹 브라우저 로그인을 먼저 완료**해 주십시오:
+> ```bash
+> gcloud auth application-default login
+> ```
+
 ```bash
 cd terraform
 
 # 생성한 GCS 버킷을 백엔드로 주입하여 테라폼 초기화
 terraform init -backend-config="bucket=${TF_STATE_BUCKET}"
+
 
 # 인프라 리소스 배포 적용
 # (사전 체크리스트 단계에서 이미 terraform.tfvars 파일을 생성했으므로, 
