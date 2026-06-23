@@ -107,8 +107,25 @@ PROJECT_ID=YOUR-GCP-PROJECT-ID ./deploy.sh
 ```
 
 ### 4단계: Gemini Enterprise 에이전트 카드 등록
-배포된 Cloud Run의 퍼블릭 주소 아래에 정의된 스펙 카드를 제미나이 엔터프라이즈 관리자 콘솔에 등록합니다.
-* **등록 URL:** `https://<YOUR-CLOUD-RUN-URL>/.well-known/agent-card.json`
+배포된 Cloud Run 서비스가 제공하는 에이전트 스펙 JSON을 제미나이 엔터프라이즈 관리자 콘솔에 등록합니다.
+1. 웹 브라우저에서 `https://<YOUR-CLOUD-RUN-URL>/.well-known/agent-card.json` 주소로 접속하여 출력된 **JSON 내용 전체를 복사**합니다.
+2. **구글 워크스페이스 관리자 콘솔(Workspace Admin Console)** > **앱(Apps)** > **Gemini** > **에이전트 플랫폼(Agent Platform)**으로 이동합니다.
+3. 새 커스텀 에이전트 추가를 누르고, 복사한 **JSON 텍스트를 직접 입력창에 붙여넣기(Paste)** 하거나 다운로드한 JSON 파일을 업로드하여 등록을 완료합니다.
+
+### 5단계: E2E 동작 검증 (E2E Verification)
+배포가 완료된 후, 전체 시스템(인프라-라우터-가상머신-AI모델)이 유기적으로 정상 작동하는지 터미널에서 단 한 줄의 명령어로 즉시 검증할 수 있습니다.
+```bash
+# 1. 구글 클라우드 액세스 토큰 생성
+TOKEN=$(gcloud auth print-access-token)
+
+# 2. 배포된 라우터로 모의 A2A 요청 전송 (OK 답변이 오면 성공!)
+curl -sS -X POST "https://<YOUR-CLOUD-RUN-URL>/" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"message/send","params":{"message":{"kind":"message","messageId":"smoke-test","role":"user","parts":[{"kind":"text","text":"Reply with OK"}]}},"id":1}'
+```
+이 테스트가 성공하면 **"사용자 식별 ➔ 가상 머신 자율 기동 ➔ 에이전트 동작 ➔ Vertex AI 모델 응답"**에 이르는 모든 클라우드 파이프라인이 무결하게 구동 중임이 증명됩니다.
+
 
 ---
 
