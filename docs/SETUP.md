@@ -263,10 +263,26 @@ curl "${ROUTER_URL}/.well-known/agent-card.json" | jq .
 5. **[에이전트 카드 JSON (Agent card JSON)]** 입력창에 위 **2단계에서 복사해 둔 JSON 텍스트 전체**를 그대로 붙여넣습니다.
 6. **[에이전트 세부정보 미리보기 (Preview agent details)]** ➔ **[다음 (Next)]**을 누릅니다.
 7. **OAuth 보안 인증 정보 입력 (GCP ↔ Gemini 연동):**
-   * **Client ID & Client secret:** 위 1단계에서 다운로드한 JSON 파일에 적힌 값을 복사해 입력합니다.
-   * **Authorization URI & Token URI:** 다운로드한 JSON 파일 내부의 URI 주소값을 각각 대조하여 입력합니다.
-   * **Scopes:** 에이전트 매핑과 권한 검증에 필요한 기본 범위(예: `email`, `openid` 등)를 입력합니다.
+   고객사의 개별 개발자 이메일을 식별하여 개인용 가상 머신(Workstation)에 매핑하기 위한 구글 표준 OAuth 인증 정보를 아래와 같이 입력합니다:
+   * **Authorization URI (승인 URI):** 아래 표준 주소를 복사해서 그대로 붙여넣습니다.
+     ```text
+     https://accounts.google.com/o/oauth2/v2/auth
+     ```
+   * **Token URI (토큰 URI):** 아래 표준 주소를 복사해서 그대로 붙여넣습니다.
+     ```text
+     https://oauth2.googleapis.com/token
+     ```
+   * **Scopes (범위):** 유저 식별용 이메일 권한입니다. 아래 한 줄 전체를 복사해서 그대로 붙여넣습니다 (띄어쓰기로 구분되어 있습니다):
+     ```text
+     openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile
+     ```
+     *(만약 입력창이 한 줄씩 개별 입력하는 구조라면 아래 3개 값을 각각 하나씩 입력해 주십시오.)*
+     * `openid`
+     * `https://www.googleapis.com/auth/userinfo.email`
+     * `https://www.googleapis.com/auth/userinfo.profile`
+   * **Client ID & Client secret:** 위 1단계에서 다운로드한 자격 증명 JSON 파일 내부의 `client_id` 및 `client_secret` 값을 찾아 각각 입력해 줍니다.
 8. **[완료 (Finish)]** 버튼을 누르면 정식 등록이 완료됩니다.
+
 
 ### 4. 🎯 제미나이 UI에서 최종 작동성 검증
 1. 정식 구글 워크스페이스 사용자 계정으로 **Gemini Enterprise 채팅 화면** (`gemini.google.com`)에 접속합니다.
