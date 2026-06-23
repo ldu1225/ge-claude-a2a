@@ -97,17 +97,7 @@ terraform apply -var="project_id=${PROJECT_ID}"
     -var="subnetwork=a2a-ws-subnet"
   ```
   *(프로덕션 환경에서는 명령어마다 변수를 치는 대신 `terraform.tfvars` 파일을 생성하여 `project_id` 및 `network` 변수를 영구적으로 기재하여 사용하는 것을 권장합니다.)*
-
-* **참고 (기존 Cloud NAT 및 Router 재사용):** 
-  만약 고객사 VPC 네트워크에 이미 인터넷 아웃바운드용 Cloud NAT와 Router가 구성되어 있다면, 불필요한 이중 지출 및 보안 통로 분산을 막기 위해 아래와 같이 `create_nat=false` 변수를 주입하여 배포합니다. 이 경우 테라폼은 라우터와 NAT 생성을 안전하게 건너뛰고 기존 인프라를 재사용합니다:
-  ```bash
-  terraform apply \
-    -var="project_id=${PROJECT_ID}" \
-    -var="create_nat=false"
-  ```
-
 * **결과값 확인:** 배포가 완료되면 화면에 출력되는 `artifact_registry_repo` 및 `cloud_run_url` 주소를 메모해 둡니다.
-
 
 ---
 

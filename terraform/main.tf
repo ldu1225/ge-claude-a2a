@@ -82,16 +82,14 @@ resource "google_compute_subnetwork" "workstations" {
 }
 
 resource "google_compute_router" "router" {
-  count   = var.create_nat ? 1 : 0
   name    = "a2a-ws-router"
   region  = var.workstation_region
   network = "projects/${var.project_id}/global/networks/${var.network}"
 }
 
 resource "google_compute_router_nat" "nat" {
-  count                              = var.create_nat ? 1 : 0
   name                               = "a2a-ws-nat"
-  router                             = google_compute_router.router[0].name
+  router                             = google_compute_router.router.name
   region                             = var.workstation_region
   nat_ip_allocate_option             = "AUTO_ONLY"
   source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
@@ -100,7 +98,6 @@ resource "google_compute_router_nat" "nat" {
     source_ip_ranges_to_nat = ["ALL_IP_RANGES"]
   }
 }
-
 
 # -------------------------------------------------------------------
 # Cloud Workstations
