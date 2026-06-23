@@ -49,7 +49,20 @@ gcloud config set project $PROJECT_ID
 * **상황:** 인프라를 배포하는 사람의 계정은 최소한 다음 리소스들을 생성/수정할 수 있는 권한이 있어야 합니다. 권한이 부족하면 테라폼 실행 중간에 권한 거부 에러가 납니다.
 * **필수 권한:** `roles/workstations.admin` (워크스테이션 클러스터 관리), `roles/run.admin` (라우터 배포), `roles/iam.serviceAccountAdmin` (서비스 계정 생성), `roles/compute.networkAdmin` (서브넷 및 라우터 NAT 생성).
 
+### 🚫 6. 도메인 제한 공유(Domain Restricted Sharing) 조직 정책 예외 처리
+* **상황:** 테라폼 배포의 최후반부에서 Cloud Run 서비스(`a2a-router`)에 퍼블릭 인보커 권한을 설정할 때, `One or more users named in the policy do not belong to a permitted customer` 에러와 함께 배포가 거부되는 현상입니다.
+* **원인:** 구글 랜딩존 등 보안이 철저한 GCP 환경에서는 프로젝트 외부 도메인이나 퍼블릭(`allUsers`) 권한 부여를 원천 금지하는 조직 정책(**`constraints/iam.allowedPolicyMemberDomains`**)이 강제 적용되어 있기 때문입니다.
+* **해결 방법 (GCP 콘솔 조치):**
+  1. 구글 클라우드 콘솔에 접속하여 **[조직 정책 (Organization Policies)]** 메뉴로 이동합니다.
+  2. 필터 창에 **`constraints/iam.allowedPolicyMemberDomains`** (도메인 제한 공유) 정책을 검색하여 선택합니다.
+  3. 상단 프로젝트 선택기에서 **본 에이전트 배포 프로젝트**를 선택합니다.
+  4. **[정책 관리 (Manage Policy)]** 버튼을 누릅니다.
+  5. **[맞춤설정 (Customize)]**을 선택하고, **[상속된 정책 재정의 (Override parent policy)]**를 활성화합니다.
+  6. 규칙(Rules) 추가 버튼을 누르고 정책 값을 **[모두 허용 (Allow All)]**으로 설정하여 저장합니다.
+  7. 약 1분 후 테라폼 배포를 재실행하면 조직 정책 검문을 통과하여 100% 완벽하게 가동됩니다.
+
 ---
+
 
 
 ## 1단계: 필수 GCP API 활성화
